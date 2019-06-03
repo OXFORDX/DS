@@ -1,82 +1,66 @@
-import json
-import numpy as np
-import random
+class Graph:
+
+    def __init__(self, graph):
+        self.graph = graph
+        self.org_graph = [i[:] for i in graph]
+        self.ROW = len(graph)
+        self.COL = len(graph[0])
+
+    def BFS(self, s, t, parent):
+        visited = [False] * (self.ROW)
+        queue = []
+        queue.append(s)
+        visited[s] = True
+        while queue:
+            u = queue.pop(0)
+            for ind, val in enumerate(self.graph[u]):
+                if visited[ind] == False and val > 0:
+                    queue.append(ind)
+                    visited[ind] = True
+                    parent[ind] = u
+        return True if visited[t] else False
+
+    def minCut(self, source, sink):
+        source -= 1
+        sink -= 1
+        parent = [-1] * (self.ROW)
+        max_flow = 0
+        path_flow = float("Inf")
+        s = sink
+        while (s != source):
+            path_flow = min(path_flow, self.graph[parent[s]][s])
+            s = parent[s]
+        max_flow += path_flow
+        v = sink
+        while (v != source):
+            u = parent[v]
+            self.graph[u][v] -= path_flow
+            self.graph[v][u] += path_flow
+            v = parent[v]
+        for i in range(self.ROW):
+            for j in range(self.COL):
+                if self.graph[i][j] == 0 and self.org_graph[i][j] > 0:
+                    print(str(i + 1) + " - " + str(j + 1))
+        return 'Max flow: ' + str(max_flow)
 
 
-class lab8:
-    def __init__(self):
-        self.G = {}
-        self.inf = 99999
-        self.arr = []
-        self.matr = []
-        self.visited = []
+# Create a graph given in the above diagram
+graph = [[0, 12, 0, 1, 0, 0, 0, 0, 0, 0],
+         [12, 0, 5, 0, 7, 0, 0, 9, 0, 0],
+         [0, 5, 0, 3, 0, 0, 4, 0, 0, 0],
+         [1, 0, 3, 0, 0, 2, 0, 0, 0, 0],
+         [0, 7, 0, 0, 0, 0, 6, 0, 7, 5],
+         [0, 0, 0, 2, 0, 0, 1, 0, 0, 0],
+         [0, 0, 4, 0, 6, 1, 0, 0, 0, 4],
+         [0, 9, 0, 0, 0, 0, 0, 0, 1, 0],
+         [0, 0, 0, 0, 7, 0, 0, 1, 0, 2],
+         [0, 0, 0, 0, 5, 0, 4, 0, 2, 0]]
 
-    def __repr__(self):
-        st = ''
-        if len(self.G) != 0:
-            for i, j in self.G.items():
-                st += str(i) + str(j) + '\n'
-            return st
+g = Graph(graph)
 
-        else:
-            return 'Graph is empty'
+source = 1
+sink = 10
 
-    def create_matrix(self):
-        x = len(self.G)
-        self.matr = np.zeros([x, x], dtype=int)
-        for i, j in self.G.items():
-            for x, y in j.items():
-                self.matr[int(i), int(x)] = y
-        self.visited = [False] * len(self.matr)
-        return self.matr
-
-    def load(self, files):
-        try:
-            print('Try to open json...')
-            with open(files, 'r') as file:
-                print('File opened successfully!')
-                x = json.load(file)
-                self.G = x
-                print(self.create_matrix())
-        except FileNotFoundError:
-            print('File not found!')
-
-        finally:
-            self.create_matrix()
-            return self.G
-
-    def save(self, files):
-        with open(files, 'w') as file:
-            json.dump(self.G, file, indent=1)
-
-    def add_edge(self, a, b, weight):
-        self._add_edge(a, b, weight)
-
-    def _add_edge(self, a, b, weight):
-        if a == b:
-            return 'The same'
-        weight = int(weight)
-        if a not in self.G:
-            self.G[a] = {b: weight}
-        else:
-            self.G[a][b] = weight
-
-    def randomgen(self, v):
-        somelen = v
-        helparr = np.zeros([somelen, somelen], dtype=int)
-        print('Creating graph...')
-        for i in range(v):
-            for j in range(v):
-                k = random.randrange(0, v * 2)
-                x = random.randrange(0, 2)
-                if x == 1 and i != j:
-                    if helparr[i][j] != 1:
-                        self.add_edge(str(i), str(j), k)
-                        helparr[i][j] = 1
-                else:
-                    continue
-        print('Graph created')
-        print(self.G)
-        self.create_matrix()
-        print(self.matr)
-        print(self.G)
+print(g.minCut(source, sink))
+print('Para:')
+print('a -> D\nb -> C\nc -> F\nd -> E\ne -> B\nf -> A')
