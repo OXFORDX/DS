@@ -1,7 +1,6 @@
 import json
 import time
 import random
-from collections import defaultdict
 import numpy as np
 
 
@@ -125,33 +124,16 @@ class graph:
 
     def BellmanFord(self, src):
         k = len(self.G)
-        # Step 1: Initialize distances from src to all other vertices
-        # as INFINITE
         dist = [float("Inf")] * k
         dist[src] = 0
-
-        # Step 2: Relax all edges |V| - 1 times. A simple shortest
-        # path from src to any other vertex can have at-most |V| - 1
-        # edges
         for i in range(k - 1):
-            # Update dist value and parent index of the adjacent vertices of
-            # the picked vertex. Consider only those vertices which are still in
-            # queue
             for u, v, w in self.G:
                 if dist[u] != float("Inf") and dist[u] + w < dist[v]:
                     dist[v] = dist[u] + w
-
-                    # Step 3: check for negative-weight cycles.  The above step
-        # guarantees shortest distances if graph doesn't contain
-        # negative weight cycle.  If we get a shorter path, then there
-        # is a cycle.
-
         for u, v, w in self.G:
             if dist[u] != float("Inf") and dist[u] + w < dist[v]:
                 print("Graph contains negative weight cycle")
                 return
-
-        # print all distance
         self.printArr(dist)
 
     def randomgen(self, v):
@@ -174,26 +156,11 @@ class graph:
         print(self.G)
 
     def BFS(self, s, t, parent):
-
-        # Mark all the vertices as not visited
         visited = [False] * (self.ROW)
-
-        # Create a queue for BFS
         queue = []
-
-        # Mark the source node as visited and enqueue it
         queue.append(s)
-        visited[s] = True
-
-        # Standard BFS Loop
         while queue:
-
-            # Dequeue a vertex from queue and print it
             u = queue.pop(0)
-
-            # Get all adjacent vertices of the dequeued vertex u
-            # If a adjacent has not been visited, then mark it
-            # visited and enqueue it
             for ind, val in enumerate(self.graph[u]):
                 if visited[ind] == False and val > 0:
                     queue.append(ind)
@@ -240,6 +207,8 @@ class graph:
 
 g = graph()
 g.load('j_graph.json')
-g.djkstra(0, 16)
-g.floyd_warshall(0, 16)
+print(g.djkstra(0, 16))
+print(g.floyd_warshall(0, 16))
+g.bfs(0)
+g.d
 g.BellmanFord(0)
