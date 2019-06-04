@@ -1,5 +1,6 @@
 import numpy as np
 import json
+import sys
 
 
 class Graph:
@@ -59,8 +60,77 @@ class Graph:
                 if not visited[i]:
                     queue.append(i)
                     visited[i] = True
+        print('\n')
+
+    def minDistance(self, dist, sptSet):
+        min_index = 0
+        inf = 999999
+        k = len(self.array)
+        for v in range(k):
+            if dist[v] < inf and not sptSet[v]:
+                inf = dist[v]
+                min_index = v
+
+        return min_index
+
+    def dijkstra(self, src):
+        inf = 99999
+        k = len(self.array)
+        dist = [inf] * k
+        dist[src] = 0
+        sptSet = [False] * k
+
+        for cout in range(k):
+            u = self.minDistance(dist, sptSet)
+            sptSet[u] = True
+            for v in range(k):
+                if self.array[u][v] and not sptSet[v] and \
+                        dist[v] > dist[u] + self.array[u][v]:
+                    dist[v] = dist[u] + self.array[u][v]
+        return dist
+
+    def floydWarshall(self):
+        dist = self._floydWarshall(np.copy(self.array))
+        v = len(self.array)
+        for k in range(v):
+            for i in range(v):
+                for j in range(v):
+                    dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+        for i in range(v):
+            dist[i][i] = 0
+        return dist
+
+    def _floydWarshall(self, dist):
+        inf = 999999
+        for i in range(len(dist)):
+            for j in range(len(dist)):
+                if not dist[i][j]:
+                    dist[i][j] = inf
+        return dist
+
+    def BellmanFord(self, src):
+        k = len(self.array)
+        inf = 999999
+        dist = [inf] * k
+        dist[src] = 0
+        for i in range(k - 1):
+            for u, v, w in self._BellmanFord(k):
+                if dist[u] != float("Inf") and dist[u] + w < dist[v]:
+                    dist[v] = dist[u] + w
+        return dist
+
+    def _BellmanFord(self, k):
+        graph = []
+        for i in range(k):
+            for j in range(k):
+                if self.array[i][j]:
+                    graph.append([i, j, self.array[i][j]])
+        return graph
 
 
 g = Graph('j_graph.json')
 g.dfs(0)
 g.bfs(0)
+print(g.dijkstra(0))
+print(g.floydWarshall())
+print(g.BellmanFord(0))
