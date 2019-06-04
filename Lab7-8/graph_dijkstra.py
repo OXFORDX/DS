@@ -6,11 +6,11 @@ class Graph:
 
     def __init__(self, graph):
         if type(graph) is dict:
-            self.array = np.copy(self.create_matrix(graph))
+            self.array = np.array(np.copy(self.create_matrix(graph)), dtype=int)
         elif type(graph) is str:
-            self.array = np.copy(self.load(graph))
+            self.array = np.array(np.copy(self.load(graph)), dtype=int)
         else:
-            self.array = np.copy(graph)
+            self.array = np.array(np.copy(graph), dtype=int)
 
     def create_matrix(self, dictionary):
         x = len(dictionary)
@@ -33,4 +33,34 @@ class Graph:
 
     def save(self, files):
         with open(files, 'w') as file:
-            json.dump(self.G, file, indent=1)
+            json.dump(self.array, file, indent=1)
+
+    def dfs(self, v):
+        visited = [False] * (len(self.array))
+        self._dfs(v, visited)
+        print('\n')
+
+    def _dfs(self, v, visited):
+        visited[v] = True
+        print(v, end=' ')
+        for i in self.array[v]:
+            if not visited[i]:
+                self._dfs(i, visited)
+
+    def bfs(self, s):
+        visited = [False] * (len(self.array))
+        queue = []
+        queue.append(s)
+        visited[s] = True
+        while queue:
+            s = queue.pop(0)
+            print(s, end=" ")
+            for i in self.array[s]:
+                if not visited[i]:
+                    queue.append(i)
+                    visited[i] = True
+
+
+g = Graph('j_graph.json')
+g.dfs(0)
+g.bfs(0)
