@@ -6,6 +6,9 @@ class Graph:
     def __init__(self, graph):
         if type(graph) is dict:
             self.array = np.array(np.copy(self.create_matrix(graph)), dtype=int)
+        elif type(graph) is str and graph in 'random':
+            x = int(input('Size:'))
+            self.randomizer(x)
         elif type(graph) is str:
             self.array = np.array(np.copy(self.load(graph)), dtype=int)
         else:
@@ -58,17 +61,17 @@ class Graph:
 
         max_flow = 0
         while self.BFS(source, sink, parent, array):
-            path_flow = 999999
+            flow = 999999
             s = sink
             while s != source:
-                path_flow = min(path_flow, array[parent[s]][s])
+                flow = min(flow, array[parent[s]][s])
                 s = parent[s]
-            max_flow += path_flow
+            max_flow += flow
             v = sink
             while v != source:
                 u = parent[v]
-                array[u][v] -= path_flow
-                array[v][u] += path_flow
+                array[u][v] -= flow
+                array[v][u] += flow
                 v = parent[v]
         print(array)
         print('///\nВідсічення по:')
@@ -87,35 +90,39 @@ class Graph:
                     self.mincut_array[i][j] = self.minCut(i, j)
         return self.mincut_array
 
-    def bpm(self, u, matchR, seen):
-        k = len(self.array)
-        graph = np.copy(self.array)
+    def bpm(self, u, matchR, seen, arr):
+        k = len(arr)
+        graph = np.copy(arr)
         for v in range(k):
             if graph[u][v] and not seen[v]:
                 seen[v] = True
-
-                '''If job 'v' is not assigned to 
-                   an applicant OR previously assigned  
-                   applicant for job v (which is matchR[v])  
-                   has an alternate job available.  
-                   Since v is marked as visited in the  
-                   above line, matchR[v]  in the following 
-                   recursive call will not get job 'v' again'''
                 if matchR[v] == -1 or self.bpm(matchR[v],
-                                               matchR, seen):
+                                               matchR, seen, arr):
                     matchR[v] = u
                     return True
         return False
 
-    def maxBPM(self):
-        k = len(self.array)
+    def _maxBPM(self, arr):
+        k = len(arr)
         matchR = [-1] * k
         result = 0
         for i in range(k):
             seen = [False] * k
-            if self.bpm(i, matchR, seen):
+            if self.bpm(i, matchR, seen, arr):
                 result += 1
-        return 'Максимальне паросполучення в графі: \n{0}\n Дорівнює: {1}'.format(self.array, result)
+        return 'Максимальне паросполучення в графі: \n{0}\n Дорівнює: {1}'.format(arr, result)
+
+    def maxBPM(self):
+        v = len(self.array)
+        arr = np.copy(self.array)
+        for i in range(v):
+            for j in range(v):
+                if arr[i][j]:
+                    arr[i][j] = 1
+        print(self._maxBPM(arr))
+
+    def randomizer(self, v):
+        self.array = np.random.randint(v, size=(v, v))
 
 
 graph1 = [[0, 12, 0, 1, 0, 0, 0, 0, 0, 0],
@@ -135,9 +142,9 @@ bpGraph = [[0, 0, 0, 1, 0, 0],
            [1, 0, 0, 1, 1, 0],
            [0, 1, 0, 1, 0, 0],
            [1, 0, 0, 0, 1, 0]]
-g = Graph(graph1)
+g = Graph('random')
 
 print(g.cut_matrix())
 
-g1 = Graph(bpGraph)
-print(g1.maxBPM())
+g1 = Graph('random')
+g1.maxBPM()

@@ -1,6 +1,5 @@
 import numpy as np
 import json
-import sys
 
 
 class Graph:
@@ -8,8 +7,13 @@ class Graph:
     def __init__(self, graph):
         if type(graph) is dict:
             self.array = np.array(np.copy(self.create_matrix(graph)), dtype=int)
-        elif type(graph) is str:
+        elif graph in 'random':
+            x = int(input('Size:'))
+            self.randomizer(x)
+        elif type(graph) is str and graph not in 'random':
             self.array = np.array(np.copy(self.load(graph)), dtype=int)
+        elif graph is None:
+            self.array = []
         else:
             self.array = np.array(np.copy(graph), dtype=int)
 
@@ -84,6 +88,9 @@ class Graph:
             u = self.minDistance(dist, sptSet)
             sptSet[u] = True
             for v in range(k):
+                print(u, v)
+                print(dist)
+                print(sptSet)
                 if self.array[u][v] and not sptSet[v] and \
                         dist[v] > dist[u] + self.array[u][v]:
                     dist[v] = dist[u] + self.array[u][v]
@@ -115,7 +122,7 @@ class Graph:
         dist[src] = 0
         for i in range(k - 1):
             for u, v, w in self._BellmanFord(k):
-                if dist[u] != float("Inf") and dist[u] + w < dist[v]:
+                if dist[u] != inf and dist[u] + w < dist[v]:
                     dist[v] = dist[u] + w
         return dist
 
@@ -127,10 +134,14 @@ class Graph:
                     graph.append([i, j, self.array[i][j]])
         return graph
 
+    def randomizer(self, v):
+        self.array = np.random.randint(v, size=(v, v))
+        print(self.array)
+
 
 g = Graph('j_graph.json')
 g.dfs(0)
 g.bfs(0)
-print(g.dijkstra(0))
-print(g.floydWarshall())
-print(g.BellmanFord(0))
+print(g.dijkstra(0), '\n')
+print(g.floydWarshall(), '\n')
+print(g.BellmanFord(0), '\n')
