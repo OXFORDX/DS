@@ -1,111 +1,143 @@
+import numpy as np
+import json
+
 
 class Graph:
-
     def __init__(self, graph):
-        self.graph = graph  # residual graph
-        self.org_graph = [i[:] for i in graph]
-        self.ROW = len(graph)
-        self.COL = len(graph[0])
+        if type(graph) is dict:
+            self.array = np.array(np.copy(self.create_matrix(graph)), dtype=int)
+        elif type(graph) is str:
+            self.array = np.array(np.copy(self.load(graph)), dtype=int)
+        else:
+            self.array = np.array(np.copy(graph), dtype=int)
+        self.mincut_array = np.zeros([len(self.array), len(self.array)], dtype=int)
 
-    '''Returns true if there is a path from source 's' to sink 't' in 
-    residual graph. Also fills parent[] to store the path '''
+    def create_matrix(self, dictionary):
+        x = len(dictionary)
+        array = np.zeros([x, x])
+        for i, j in dictionary.items():
+            for x, y in j.items():
+                array[int(i), int(x)] = y
+        return array
 
-    def BFS(self, s, t, parent):
+    def load(self, files):
+        try:
+            print('Try to open json...')
+            with open(files, 'r') as file:
+                print('File opened successfully!')
+                x = json.load(file)
+            return self.create_matrix(x)
+        except FileNotFoundError:
+            print('File not found!')
+            self.load(files)
 
-        # Mark all the vertices as not visited
-        visited = [False] * (self.ROW)
+    def save(self, files):
+        with open(files, 'w') as file:
+            json.dump(self.array, file, indent=1)
 
-        # Create a queue for BFS
+    def BFS(self, s, t, parent, array):
+        v = len(self.array)
+        visited = [False] * v
         queue = []
-
-        # Mark the source node as visited and enqueue it
         queue.append(s)
         visited[s] = True
-
-        # Standard BFS Loop
         while queue:
-
-            # Dequeue a vertex from queue and print it
             u = queue.pop(0)
-
-            # Get all adjacent vertices of the dequeued vertex u
-            # If a adjacent has not been visited, then mark it
-            # visited and enqueue it
-            for ind, val in enumerate(self.graph[u]):
-                if visited[ind] == False and val > 0:
+            for ind, val in enumerate(array[u]):
+                if not visited[ind] and val > 0:
                     queue.append(ind)
                     visited[ind] = True
                     parent[ind] = u
-
-                # If we reached sink in BFS starting from source, then return
-        # true, else false
         return True if visited[t] else False
 
-    # Returns the min-cut of the given graph
     def minCut(self, source, sink):
-        source -= 1
-        sink -= 1
-        # This array is filled by BFS and to store path
-        parent = [-1] * (self.ROW)
+        array = np.copy(self.array)
+        org_graph = np.copy(self.array)
+        k = len(self.array)
+        parent = [-1] * k
 
-        max_flow = 0  # There is no flow initially
-
-        # Augment the flow while there is path from source to sink
-        while self.BFS(source, sink, parent):
-
-            # Find minimum residual capacity of the edges along the
-            # path filled by BFS. Or we can say find the maximum flow
-            # through the path found.
-            path_flow = float("Inf")
+        max_flow = 0
+        while self.BFS(source, sink, parent, array):
+            path_flow = 999999
             s = sink
-            while (s != source):
-                path_flow = min(path_flow, self.graph[parent[s]][s])
+            while s != source:
+                path_flow = min(path_flow, array[parent[s]][s])
                 s = parent[s]
-
-            # Add path flow to overall flow
             max_flow += path_flow
-
-            # update residual capacities of the edges and reverse edges
-            # along the path
             v = sink
-            while (v != source):
+            while v != source:
                 u = parent[v]
-                self.graph[u][v] -= path_flow
-                self.graph[v][u] += path_flow
+                array[u][v] -= path_flow
+                array[v][u] += path_flow
                 v = parent[v]
+        print(array)
+        print('///\nВідсічення по:')
+        for i in range(k):
+            for j in range(k):
+                if array[i][j] == 0 and org_graph[i][j] > 0:
+                    print(str(i + 1) + " - " + str(j + 1))
+        print('Максимальний потік в мережі: {0}'.format(max_flow))
+        return max_flow
 
-            # print the edges which initially had weights
-        # but now have 0 weight
-        for i in range(self.ROW):
-            for j in range(self.COL):
-                if self.graph[i][j] == 0 and self.org_graph[i][j] > 0:
-                    print(str(i) + " - " + str(j))
-        print(self.graph)
+    def cut_matrix(self):
+        k = len(self.array)
+        for i in range(k):
+            for j in range(k):
+                if i != j:
+                    self.mincut_array[i][j] = self.minCut(i, j)
+        return self.mincut_array
 
-    def para(self):
-        n = len(self.graph)
-        visit = [False] * n
-        for i in range(n):
-            for j in range(n):
-                if graph[i][j]:
-                    print(i, j)
-                    print(graph[i][j])
+    def bpm(self, u, matchR, seen):
+        k = len(self.array)
+        graph = np.copy(self.array)
+        for v in range(k):
+            if graph[u][v] and not seen[v]:
+                seen[v] = True
+
+                '''If job 'v' is not assigned to 
+                   an applicant OR previously assigned  
+                   applicant for job v (which is matchR[v])  
+                   has an alternate job available.  
+                   Since v is marked as visited in the  
+                   above line, matchR[v]  in the following 
+                   recursive call will not get job 'v' again'''
+                if matchR[v] == -1 or self.bpm(matchR[v],
+                                               matchR, seen):
+                    matchR[v] = u
+                    return True
+        return False
+
+    def maxBPM(self):
+        k = len(self.array)
+        matchR = [-1] * k
+        result = 0
+        for i in range(k):
+            seen = [False] * k
+            if self.bpm(i, matchR, seen):
+                result += 1
+        return 'Максимальне паросполучення в графі: \n{0}\n Дорівнює: {1}'.format(self.array, result)
 
 
-graph = [[0, 12, 0, 1, 0, 0, 0, 0, 0, 0],
-         [12, 0, 5, 0, 7, 0, 0, 9, 0, 0],
-         [0, 5, 0, 3, 0, 0, 4, 0, 0, 0],
-         [1, 0, 3, 0, 0, 2, 0, 0, 0, 0],
-         [0, 7, 0, 0, 0, 0, 6, 0, 7, 5],
-         [0, 0, 0, 2, 0, 0, 1, 0, 0, 0],
-         [0, 0, 4, 0, 6, 1, 0, 0, 0, 4],
-         [0, 9, 0, 0, 0, 0, 0, 0, 1, 0],
-         [0, 0, 0, 0, 7, 0, 0, 1, 0, 2],
-         [0, 0, 0, 0, 5, 0, 4, 0, 2, 0]]
+graph1 = [[0, 12, 0, 1, 0, 0, 0, 0, 0, 0],
+          [12, 0, 5, 0, 7, 0, 0, 9, 0, 0],
+          [0, 5, 0, 3, 0, 0, 4, 0, 0, 0],
+          [1, 0, 3, 0, 0, 2, 0, 0, 0, 0],
+          [0, 7, 0, 0, 0, 0, 6, 0, 7, 5],
+          [0, 0, 0, 2, 0, 0, 1, 0, 0, 0],
+          [0, 0, 4, 0, 6, 1, 0, 0, 0, 4],
+          [0, 9, 0, 0, 0, 0, 0, 0, 1, 0],
+          [0, 0, 0, 0, 7, 0, 0, 1, 0, 2],
+          [0, 0, 0, 0, 5, 0, 4, 0, 2, 0]]
 
-g = Graph(graph)
+bpGraph = [[0, 0, 0, 1, 0, 0],
+           [0, 0, 1, 0, 0, 0],
+           [0, 1, 0, 0, 0, 1],
+           [1, 0, 0, 1, 1, 0],
+           [0, 1, 0, 1, 0, 0],
+           [1, 0, 0, 0, 1, 0]]
+g = Graph(graph1)
 
-source = 1
-sink = 10
+print(g.cut_matrix())
 
-g.minCut(source, sink)
+g1 = Graph(bpGraph)
+print(g1.maxBPM())
